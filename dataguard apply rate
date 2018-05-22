@@ -1,0 +1,29 @@
+
+--https://mehmeteser.wordpress.com/2014/04/05/monitor-dataguard-apply-rate/
+#!/bin/bash
+date;
+hostname;
+export ORACLE_HOME=/oracle/product/11.2.0
+export ORACLE_SID=TESTDB
+
+echo "*******************************************************************************************************************"
+sqlplus -S / as sysdba  <<EOF
+ set lines 200
+ set feedback off
+ set pages 0 
+ col comments for a20
+ col start_time for a30
+ col item for a30
+ col units for a15
+ col last_apply_time for a30
+ select to_char(R.START_TIME,'DD.MON.YYYY HH24:MI')start_time , 
+        R.ITEM, R.UNITS, R.SOFAR , 
+        to_char(R.TIMESTAMP,'DD.MON.YYYY HH24:MI:SS') last_apply_time
+    from v\$recovery_progress R
+    where start_time = (select max(start_time) from v\$recovery_progress) order by start_time, item;
+ select process, status, thread#, sequence#, block#, blocks from v\$managed_standby order by 1;	
+EOF
+
+echo ""
+echo "*******************************************************************************************************************"
+top -cbn 1 | head -n 40
