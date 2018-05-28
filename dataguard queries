@@ -207,31 +207,17 @@ DAY                 COUNT#       MIN#       MAX# DAILY_AVG_MB
 2013-06-04             554     138223     138500       567296
 
 SQL>  select open_mode from v$database;
-
-
 OPEN_MODE
-
 ---------
-
 MOUNTED
 
-
 SQL> alter database open read only;
-
 Database altered.
-
-
 SQL> select open_mode from v$database;
-
-
 OPEN_MODE
-
 ---------
-
 READ ONLY
-
 3. Start the log apply service on one instance with 
-
 SQL> alter database recover managed standby database using current logfile disconnect;
 
 Database altered.
@@ -240,11 +226,25 @@ Database altered.
 
 SQL> select open_mode from v$database;
 
-
-
 OPEN_MODE
-
 --------------------
-
-
 READ ONLY WITH APPLY
+
+Redo generation:
+
+SELECT * FROM (SELECT * FROM DBA_HIST_SYSMETRIC_HISTORY
+     WHERE metric_name='Redo Generated Per Sec' ORDER BY snap_id DESC) WHERE rownum<=10;
+ 
+   SNAP_ID       DBID INSTANCE_NUMBER BEGIN_TIME                 END_TIME                      INTSIZE   GROUP_ID  METRIC_ID METRIC_NAME                    VALUE METRIC_UNIT
+---------- ---------- --------------- -------------------------- -------------------------- ---------- ---------- ---------- ------------------------- ---------- --------------------
+      9947 2087071167               2 02-may-2014 14:00:35       02-may-2014 14:01:35             6017          2       2016 Redo Generated Per Sec    344912.814 Bytes Per SECOND
+      9947 2087071167               2 02-may-2014 14:09:35       02-may-2014 14:10:35             6017          2       2016 Redo Generated Per Sec    185112.049 Bytes Per SECOND
+      9947 2087071167               2 02-may-2014 14:08:35       02-may-2014 14:09:35             6018          2       2016 Redo Generated Per Sec    131244.799 Bytes Per SECOND
+      9947 2087071167               2 02-may-2014 14:07:35       02-may-2014 14:08:35             5917          2       2016 Redo Generated Per Sec    281785.567 Bytes Per SECOND
+      9947 2087071167               2 02-may-2014 14:06:35       02-may-2014 14:07:35             6018          2       2016 Redo Generated Per Sec    153441.941 Bytes Per SECOND
+      9947 2087071167               2 02-may-2014 14:05:35       02-may-2014 14:06:35             6018          2       2016 Redo Generated Per Sec    154841.542 Bytes Per SECOND
+      9947 2087071167               2 02-may-2014 14:04:35       02-may-2014 14:05:35             6018          2       2016 Redo Generated Per Sec    105532.802 Bytes Per SECOND
+      9947 2087071167               2 02-may-2014 14:03:35       02-may-2014 14:04:35             6017          2       2016 Redo Generated Per Sec    217653.582 Bytes Per SECOND
+      9947 2087071167               2 02-may-2014 14:02:35       02-may-2014 14:03:35             6017          2       2016 Redo Generated Per Sec    251052.285 Bytes Per SECOND
+      9947 2087071167               2 02-may-2014 14:01:35       02-may-2014 14:02:35             5917          2       2016 Redo Generated Per Sec    209524.624 Bytes Per SECOND
+ 
