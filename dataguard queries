@@ -1,0 +1,250 @@
+
+QUERY DATAGUARD AND STANDBY STATUS 
+
+Standby database process status: You can run following query on standby database to see what MRP and RFS processes are doing, which block of which archivelog sequences are being shipped or being applied.
+
+SQL> Set line 200
+SQL> select process, status, thread#, sequence#, block#, blocks from v$managed_standby ;
+
+PROCESS   STATUS          THREAD#  SEQUENCE#     BLOCK#     BLOCKS
+--------- ------------ ---------- ---------- ---------- ----------
+ARCH      CLOSING               1      69479     932864        261
+ARCH      CLOSING               1      69480     928768        670
+ARCH      CLOSING               2      75336     933888        654
+ARCH      CLOSING               2      78079     930816        842
+ARCH      CLOSING               1      69475     943104         79
+RFS         IDLE                         0          0          0          0
+...
+RFS       RECEIVING             1      69481     688130       1024
+MRP0      WAIT_FOR_LOG          2      78080          0          0
+RFS               IDLE                  2      78080     873759          3
+
+Last applied log: Run this query on the standby database to see the last applied archivelog sequence number for each thread.
+
+
+SQL> SELECT thread#, max(SEQUENCE#) FROM V$ARCHIVED_LOG where APPLIED='YES' group by thread#;
+
+   THREAD# MAX(SEQUENCE#)
+---------- --------------
+         1          69479
+         2          78079
+
+Archivelog difference: Run this on primary database. (not for real time apply)
+
+SQL> ALTER SESSION SET NLS_DATE_FORMAT = 'DD-MON-YYYY HH24:MI:SS';
+SQL> SELECT   a.thread#,  b. last_seq, a.applied_seq, a. last_app_timestamp, b.last_seq-a.applied_seq   ARC_DIFF FROM (SELECT  thread#, MAX(sequence#) applied_seq, MAX(next_time) last_app_timestamp FROM gv$archived_log WHERE applied = 'YES' GROUP BY thread#) a,           (SELECT  thread#, MAX (sequence#) last_seq FROM gv$archived_log GROUP BY thread#) b WHERE a.thread# = b.thread#;
+
+   THREAD#   LAST_SEQ APPLIED_SEQ LAST_APP_TIMESTAMP     ARC_DIFF
+---------- ---------- ----------- -------------------- ----------
+         2      78083       78082 01-JUL-2013 16:05:25          1
+         1      69486       69485 01-JUL-2013 16:08:21          1
+
+Apply/transport lags: v$dataguard_stats view will show the general synchronization status of standby database. Better to use on 11gR2 even with the latest PSU (Check bugs : 13394040, 7119382, 9968073, 7507011, 13045332, 6874522).
+
+
+SQL> set lines 200
+SQL> col name format a40
+SQL> col value format a20
+SQL> select * from v$dataguard_stats;
+
+NAME                     VALUE             UNIT        TIME_COMPUTED         DATUM_TIME
+------------------------ ----------------- ------      --------------------- ---------------------
+transport lag            +00 00:09:44      …           07/01/2013 15:49:29   07/01/2013 15:49:27
+apply lag                +00 00:09:44      …           07/01/2013 15:49:29   07/01/2013 15:49:27
+apply finish time        +00 00:00:00.001  …           07/01/2013 15:49:29
+estimated startup time   27                second      07/01/2013 15:49:29   
+
+Apply rate: To find out the speed of media recovery in a standby database, you can use this query: (*bu işe yarar)
+
+
+SQL> set lines 200
+SQL> col type format a30
+SQL> col ITEM format a20
+SQL> col comments format a20
+SQL> select * from v$recovery_progress;
+
+START_TIM TYPE             ITEM                 UNITS        SOFAR      TOTAL TIMESTAMP COMMENTS
+--------- ---------------- -------------------- ------------------ ---------- --------- ----
+20-JUN-13 Media Recovery   Log Files            Files         3363          0
+20-JUN-13 Media Recovery   Active Apply Rate    KB/sec       21584          0
+20-JUN-13 Media Recovery   Average Apply Rate   KB/sec        3239          0
+20-JUN-13 Media Recovery   Maximum Apply Rate   KB/sec       48913          0
+20-JUN-13 Media Recovery   Redo Applied         Megabytes  2953165          0
+20-JUN-13 Media Recovery   Last Applied Redo    SCN+Time         0          0 01-JUL-13
+20-JUN-13 Media Recovery   Active Time          Seconds     233822          0
+20-JUN-13 Media Recovery   Apply Time per Log   Seconds         57          0
+20-JUN-13 Media Recovery   Checkpoint Time per  Seconds         11          0
+                           Log
+20-JUN-13 Media Recovery   Elapsed Time         Seconds     933565          0
+20-JUN-13 Media Recovery   Standby Apply Lag    Seconds        483          0
+
+11 rows selected.
+
+You can also use below before 11gR2. (Deprecated in 11gR2):
+
+SQL> select APPLY_RATE from V$STANDBY_APPLY_SNAPSHOT;
+
+To check Redo apply mode on physical standby database:
+
+SQL> SELECT RECOVERY_MODE FROM V$ARCHIVE_DEST_STATUS where dest_id=2;
+
+RECOVERY_MODE
+-----------------------
+MANAGED
+
+To check what MRP process is waiting:
+
+select a.event, a.wait_time, a.seconds_in_wait from gv$session_wait a, gv$session b where a.sid=b.sid and b.sid=(select SID from v$session where PADDR=(select PADDR from v$bgprocess where NAME='MRP0'))
+
+EVENT                                           WAIT_TIME SECONDS_IN_WAIT
+---------------------------------------------- ---------- ---------------
+parallel recovery control message reply                 0               0
+
+Archive Lag Histogram: The  V$STANDBY_EVENT_HISTOGRAM view came with 11gR2 and shows the historical occurance of archive lags in terms of seconds. For example following output shows that in 07/01/2013 archive lag reached 5 hours and in 06/15/2013 gap was 22 hours which was resolved after more than a week.
+
+SQL> col name format a10
+SQL> select * from  V$STANDBY_EVENT_HISTOGRAM;
+
+NAME             TIME UNIT             COUNT LAST_TIME_UPDATED
+---------- ---------- ------------  -------- --------------------
+apply lag           0 seconds              0
+apply lag           1 seconds              1 04/13/2013 01:40:23
+apply lag           2 seconds              1 04/13/2013 01:40:24
+apply lag           3 seconds              1 04/13/2013 01:40:25
+apply lag           4 seconds              1 04/13/2013 01:40:26
+...
+apply lag          25 seconds              3 05/21/2013 06:31:19
+apply lag          26 seconds              3 05/21/2013 06:31:20
+apply lag          27 seconds              3 05/21/2013 06:31:23
+apply lag          28 seconds              5 05/21/2013 06:31:22
+apply lag          29 seconds              1 05/15/2013 07:47:46
+apply lag          30 seconds              4 05/21/2013 06:31:24
+...
+apply lag          44 seconds              8 06/26/2013 00:33:14
+apply lag          45 seconds              8 06/26/2013 00:33:15
+apply lag          46 seconds              8 06/26/2013 00:33:17
+apply lag          47 seconds              8 06/26/2013 00:33:18
+apply lag          48 seconds              9 06/26/2013 00:33:19
+...
+apply lag          57 seconds             29 06/26/2013 06:33:02
+apply lag          58 seconds             25 06/26/2013 06:33:27
+apply lag          59 seconds             28 06/26/2013 06:33:28
+apply lag           1 minutes              0
+apply lag           2 minutes           9316 06/30/2013 18:33:45
+apply lag           3 minutes          94601 07/01/2013 14:23:11
+apply lag           4 minutes         209262 07/01/2013 14:56:13
+apply lag           5 minutes         355744 07/01/2013 16:02:33
+apply lag           6 minutes         522176 07/01/2013 16:03:30
+apply lag           7 minutes         634199 07/01/2013 16:01:10
+...
+apply lag          47 minutes          28174 07/01/2013 05:14:53
+apply lag          48 minutes          28231 07/01/2013 05:14:49
+apply lag          49 minutes          27099 07/01/2013 05:14:44
+apply lag          50 minutes          26532 07/01/2013 05:14:40
+...
+apply lag           3 hours           564493 07/01/2013 05:00:08
+apply lag           4 hours           511628 06/22/2013 07:43:26
+apply lag           5 hours           448572 06/22/2013 07:34:03
+apply lag           6 hours           369037 06/22/2013 07:09:59
+apply lag           7 hours           206117 06/21/2013 00:53:27
+apply lag           8 hours           137932 06/21/2013 00:33:53
+apply lag           9 hours           137091 06/21/2013 00:03:33
+apply lag          10 hours            98103 06/20/2013 23:26:34
+apply lag          11 hours           104157 06/20/2013 22:53:12
+apply lag          12 hours           102141 06/20/2013 22:14:07
+apply lag          13 hours            89214 06/20/2013 21:32:22
+apply lag          14 hours            64880 06/20/2013 21:04:29
+apply lag          15 hours            43471 06/20/2013 21:01:45
+apply lag          16 hours            38075 06/20/2013 20:59:37
+apply lag          17 hours            38449 06/20/2013 20:55:34
+apply lag          18 hours            22049 06/16/2013 01:22:55
+apply lag          19 hours            19873 06/16/2013 00:53:55
+apply lag          20 hours            15985 06/15/2013 23:52:16
+apply lag          21 hours            13290 06/15/2013 03:08:49
+apply lag          22 hours             7330 06/15/2013 02:07:26
+apply lag          23 hours             1606 02/15/2013 22:16:11
+apply lag           1 days              3216 02/15/2013 22:00:42
+apply lag           2 days             16768 02/15/2013 20:54:06
+
+144 rows selected.
+
+
+Redo switch report of primary database can be seen with the following query. This information may be helpful when investigating the possible causes of archive gaps, apply lags or data guard performance issues.
+
+SQL> SET PAGESIZE 9999
+SQL> col day format a15
+SQL> SELECT A.*, Round(A.Count#*B.AVG#/1024/1024) Daily_Avg_Mb FROM(SELECT To_Char(First_Time,'YYYY-MM-DD') DAY, Count(1) Count#, Min(RECID) Min#, Max(RECID) Max# FROM gv$log_history GROUP BY To_Char(First_Time,'YYYY-MM-DD') ORDER BY 1 DESC) A,(SELECT Avg(BYTES) AVG#, Count(1) Count#, Max(BYTES) Max_Bytes, Min(BYTES) Min_Bytes FROM gv$log ) B;
+
+DAY                 COUNT#       MIN#       MAX# DAILY_AVG_MB
+--------------- ---------- ---------- ---------- ------------
+2013-07-01             442     147345     147566       452608
+2013-06-30             526     147083     147347       538624
+2013-06-29             532     146817     147082       544768
+2013-06-28             928     146353     146816       950272
+2013-06-27             760     145973     146352       778240
+2013-06-26             708     145619     145972       724992
+2013-06-25             560     145338     145618       573440
+2013-06-24             498     145090     145339       509952
+2013-06-23             104     145038     145089       106496
+2013-06-22             338     144869     145037       346112
+2013-06-21             748     144495     144868       765952
+2013-06-20             748     144121     144494       765952
+2013-06-19             952     143645     144120       974848
+2013-06-18             882     143204     143644       903168
+2013-06-17             914     142746     143203       935936
+2013-06-16             454     142520     142747       464896
+2013-06-15            1520     141760     142519      1556480
+2013-06-14            1862     140829     141759      1906688
+2013-06-13             970     140343     140828       993280
+2013-06-12             598     140045     140345       612352
+2013-06-11             550     139770     140044       563200
+2013-06-10             516     139511     139769       528384
+2013-06-09             178     139423     139512       182272
+2013-06-08             296     139275     139422       303104
+2013-06-07             490     139030     139274       501760
+2013-06-06             572     138744     139029       585728
+2013-06-05             488     138499     138743       499712
+2013-06-04             554     138223     138500       567296
+
+SQL>  select open_mode from v$database;
+
+
+OPEN_MODE
+
+---------
+
+MOUNTED
+
+
+SQL> alter database open read only;
+
+Database altered.
+
+
+SQL> select open_mode from v$database;
+
+
+OPEN_MODE
+
+---------
+
+READ ONLY
+
+3. Start the log apply service on one instance with 
+
+SQL> alter database recover managed standby database using current logfile disconnect;
+
+Database altered.
+
+4. On both standby instances querying the open mode will give 
+
+SQL> select open_mode from v$database;
+
+
+
+OPEN_MODE
+
+--------------------
+
+
+READ ONLY WITH APPLY
