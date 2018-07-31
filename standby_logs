@@ -1,0 +1,49 @@
+
+-----Live da buna baktık----
+set linesize 300
+column REDOLOG_FILE_NAME format a50
+SELECT
+    a.GROUP#,
+    a.THREAD#,
+    a.SEQUENCE#,
+    a.ARCHIVED,
+    a.STATUS,
+    b.MEMBER    AS REDOLOG_FILE_NAME,
+    (a.BYTES/1024/1024) AS SIZE_MB
+FROM v$log a
+JOIN v$logfile b ON a.Group#=b.Group# 
+ORDER BY a.GROUP# ASC;
+------------------Standby Control-------------------------------
+select * from v$standby_log;
+
+-------------------------KASCVX3RDG--------------------------
+alter database drop standby logfile group 9; 
+alter database drop standby logfile group 10;
+alter database drop standby logfile group 11;
+alter database drop standby logfile group 12;
+alter database drop standby logfile group 13;
+alter database drop standby logfile group 14;
+alter database drop standby logfile group 15;
+alter database drop standby logfile group 16;
+alter database drop standby logfile group 17;
+alter database drop standby logfile group 18;
+alter database drop standby logfile group 19;
+alter database drop standby logfile group 20;
+
+alter database add standby logfile THREAD 1 GROUP 30 '+RECOX2/KASCVX3RDG/STANDBYLOG/standbyt1g1.ora' size 512M;
+alter database add standby logfile THREAD 1 GROUP 31 '+RECOX2/KASCVX3RDG/STANDBYLOG/standbyt1g2.ora' size 512M;
+alter database add standby logfile THREAD 1 GROUP 32 '+RECOX2/KASCVX3RDG/STANDBYLOG/standbyt1g3.ora' size 512M;
+alter database add standby logfile THREAD 1 GROUP 33 '+RECOX2/KASCVX3RDG/STANDBYLOG/standbyt1g4.ora' size 512M;
+alter database add standby logfile THREAD 1 GROUP 34 '+RECOX2/KASCVX3RDG/STANDBYLOG/standbyt1g5.ora' size 512M;
+                                                                                                        
+alter database add standby logfile THREAD 2 GROUP 40 '+RECOX2/KASCVX3RDG/STANDBYLOG/standbyt2g1.ora' size 512M;
+alter database add standby logfile THREAD 2 GROUP 41 '+RECOX2/KASCVX3RDG/STANDBYLOG/standbyt2g2.ora' size 512M;
+alter database add standby logfile THREAD 2 GROUP 42 '+RECOX2/KASCVX3RDG/STANDBYLOG/standbyt2g3.ora' size 512M;
+alter database add standby logfile THREAD 2 GROUP 43 '+RECOX2/KASCVX3RDG/STANDBYLOG/standbyt2g4.ora' size 512M;
+alter database add standby logfile THREAD 2 GROUP 44 '+RECOX2/KASCVX3RDG/STANDBYLOG/standbyt2g5.ora' size 512M;
+
+alter database add standby logfile THREAD 3 GROUP 50 '+RECOX2/KASCVX3RDG/STANDBYLOG/standbyt3g1.ora' size 512M;
+alter database add standby logfile THREAD 3 GROUP 51 '+RECOX2/KASCVX3RDG/STANDBYLOG/standbyt3g2.ora' size 512M;
+alter database add standby logfile THREAD 3 GROUP 52 '+RECOX2/KASCVX3RDG/STANDBYLOG/standbyt3g3.ora' size 512M;
+alter database add standby logfile THREAD 3 GROUP 53 '+RECOX2/KASCVX3RDG/STANDBYLOG/standbyt3g4.ora' size 512M;
+alter database add standby logfile THREAD 3 GROUP 54 '+RECOX2/KASCVX3RDG/STANDBYLOG/standbyt3g5.ora' size 512M;
