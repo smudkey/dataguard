@@ -1,0 +1,33 @@
+select to_char(first_time,'YYYY-MM-DD') day,
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'00',blocks*block_size/1024/1024/1024,0)),'999') "00",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'01',blocks*block_size/1024/1024/1024,0)),'999') "01",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'02',blocks*block_size/1024/1024/1024,0)),'999') "02",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'03',blocks*block_size/1024/1024/1024,0)),'999') "03",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'04',blocks*block_size/1024/1024/1024,0)),'999') "04",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'05',blocks*block_size/1024/1024/1024,0)),'999') "05",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'06',blocks*block_size/1024/1024/1024,0)),'999') "06",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'07',blocks*block_size/1024/1024/1024,0)),'999') "07",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'08',blocks*block_size/1024/1024/1024,0)),'999') "08",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'09',blocks*block_size/1024/1024/1024,0)),'999') "09",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'10',blocks*block_size/1024/1024/1024,0)),'999') "10",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'11',blocks*block_size/1024/1024/1024,0)),'999') "11",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'12',blocks*block_size/1024/1024/1024,0)),'999') "12",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'13',blocks*block_size/1024/1024/1024,0)),'999') "13",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'14',blocks*block_size/1024/1024/1024,0)),'999') "14",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'15',blocks*block_size/1024/1024/1024,0)),'999') "15",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'16',blocks*block_size/1024/1024/1024,0)),'999') "16",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'17',blocks*block_size/1024/1024/1024,0)),'999') "17",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'18',blocks*block_size/1024/1024/1024,0)),'999') "18",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'19',blocks*block_size/1024/1024/1024,0)),'999') "19",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'20',blocks*block_size/1024/1024/1024,0)),'999') "20",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'21',blocks*block_size/1024/1024/1024,0)),'999') "21",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'22',blocks*block_size/1024/1024/1024,0)),'999') "22",
+to_char(sum(decode(substr(to_char(first_time,'HH24'),1,2),'23',blocks*block_size/1024/1024/1024,0)),'999') "23",
+round(sum(blocks*block_size/1024/1024/1024)) "Bytes Gb"
+from v$ARCHIVED_LOG
+where dest_id = 1
+and resetlogs_change#<>1
+and creator ='ARCH'
+--and thread#=4
+group by to_char(first_time,'YYYY-MM-DD')
+order by 1 desc
