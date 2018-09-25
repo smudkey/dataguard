@@ -3,8 +3,9 @@ QUERY DATAGUARD AND STANDBY STATUS
 
 Standby database process status: You can run following query on standby database to see what MRP and RFS processes are doing, which block of which archivelog sequences are being shipped or being applied.
 
-SQL> Set line 200
-SQL> select process, status, thread#, sequence#, block#, blocks from v$managed_standby ;
+SQL> 
+Set line 200
+select process, status, thread#, sequence#, block#, blocks from v$managed_standby ;
 
 PROCESS   STATUS          THREAD#  SEQUENCE#     BLOCK#     BLOCKS
 --------- ------------ ---------- ---------- ---------- ----------
@@ -21,8 +22,8 @@ RFS               IDLE                  2      78080     873759          3
 
 Last applied log: Run this query on the standby database to see the last applied archivelog sequence number for each thread.
 
-
-SQL> SELECT thread#, max(SEQUENCE#) FROM V$ARCHIVED_LOG where APPLIED='YES' group by thread#;
+SQL> 
+SELECT thread#, max(SEQUENCE#) FROM V$ARCHIVED_LOG where APPLIED='YES' group by thread#;
 
    THREAD# MAX(SEQUENCE#)
 ---------- --------------
@@ -30,9 +31,9 @@ SQL> SELECT thread#, max(SEQUENCE#) FROM V$ARCHIVED_LOG where APPLIED='YES' grou
          2          78079
 
 Archivelog difference: Run this on primary database. (not for real time apply)
-
-SQL> ALTER SESSION SET NLS_DATE_FORMAT = 'DD-MON-YYYY HH24:MI:SS';
-SQL> SELECT   a.thread#,  b. last_seq, a.applied_seq, a. last_app_timestamp, b.last_seq-a.applied_seq   ARC_DIFF FROM (SELECT  thread#, MAX(sequence#) applied_seq, MAX(next_time) last_app_timestamp FROM gv$archived_log WHERE applied = 'YES' GROUP BY thread#) a,           (SELECT  thread#, MAX (sequence#) last_seq FROM gv$archived_log GROUP BY thread#) b WHERE a.thread# = b.thread#;
+SQL> 
+ALTER SESSION SET NLS_DATE_FORMAT = 'DD-MON-YYYY HH24:MI:SS';
+SELECT   a.thread#,  b. last_seq, a.applied_seq, a. last_app_timestamp, b.last_seq-a.applied_seq   ARC_DIFF FROM (SELECT  thread#, MAX(sequence#) applied_seq, MAX(next_time) last_app_timestamp FROM gv$archived_log WHERE applied = 'YES' GROUP BY thread#) a,           (SELECT  thread#, MAX (sequence#) last_seq FROM gv$archived_log GROUP BY thread#) b WHERE a.thread# = b.thread#;
 
    THREAD#   LAST_SEQ APPLIED_SEQ LAST_APP_TIMESTAMP     ARC_DIFF
 ---------- ---------- ----------- -------------------- ----------
@@ -41,11 +42,11 @@ SQL> SELECT   a.thread#,  b. last_seq, a.applied_seq, a. last_app_timestamp, b.l
 
 Apply/transport lags: v$dataguard_stats view will show the general synchronization status of standby database. Better to use on 11gR2 even with the latest PSU (Check bugs : 13394040, 7119382, 9968073, 7507011, 13045332, 6874522).
 
-
-SQL> set lines 200
-SQL> col name format a40
-SQL> col value format a20
-SQL> select * from v$dataguard_stats;
+SQL> 
+set lines 200
+col name format a40
+col value format a20
+select * from v$dataguard_stats;
 
 NAME                     VALUE             UNIT        TIME_COMPUTED         DATUM_TIME
 ------------------------ ----------------- ------      --------------------- ---------------------
@@ -56,12 +57,12 @@ estimated startup time   27                second      07/01/2013 15:49:29
 
 Apply rate: To find out the speed of media recovery in a standby database, you can use this query: (*bu işe yarar)
 
-
-SQL> set lines 200
-SQL> col type format a30
-SQL> col ITEM format a20
-SQL> col comments format a20
-SQL> select * from v$recovery_progress;
+SQL> 
+set lines 200
+col type format a30
+col ITEM format a20
+col comments format a20
+select * from v$recovery_progress;
 
 START_TIM TYPE             ITEM                 UNITS        SOFAR      TOTAL TIMESTAMP COMMENTS
 --------- ---------------- -------------------- ------------------ ---------- --------- ----
