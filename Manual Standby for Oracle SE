@@ -1,0 +1,71 @@
+
+--https://vineshthomas.wordpress.com/2015/02/16/manual-standby-for-oracle-standard-edition/
+----manual_apply_logs.sh
+#!/bin/sh
+. /VT/scripts/env_mydb.sh
+run=0
+cd /VT/scripts
+#Extract the log sequence of the "last but one" archive generated and then add to the archive log apply 
+#script manual_apply_logs.cmd
+#sequence_no=$(ls -lart /fra/arch | tail -3 | head -1 | awk '{print $9}')
+sequence_no=$(ls -lart /fra/arch/*.dbf | tail -1 | awk '{print $9}')
+previous_sequence_no=$(head -1 find_latest_seq.out)
+if [ "$sequence_no" == "$previous_sequence_no" ] || [ "$sequence_no" == "" ]
+then
+  run=0
+else
+  echo $sequence_no > find_latest_seq.out
+  run=1
+fi
+if [ $run -eq 1 ]
+then
+sequence_no=${sequence_no#*_} # removes text from the left till the first occurance of "_"
+sequence_no=${sequence_no%%_*} # removes text to the right from the first occurance of "_"
+ 
+sequence_no=$((sequence_no + 1))
+sed -e "s/seqno/$sequence_no/g" manual_apply_logs.tmpl > manual_apply_logs.cmd
+rman target / nocmydblog cmdfile=/VT/scripts/manual_apply_logs.cmd log=/VT/scripts/logs/manual_apply_logs.log
+fi
+---
+------manual_apply_logs.tmpl
+run{
+set until sequence seqno;
+recover database;
+}
+-----
+--del_app_logs.sh
+
+#!/bin/sh
+. /VT/scripts/env_ata.sh
+cd /VT/scripts
+arch_loc="/fra/arch/"
+ 
+#generates the list of archives alread applied & can be deleted
+sqlplus "/ as sysdba" << eof 
+@delete_list.sql
+eof
+ 
+#next few lines are to comment out the crontab of the oracle user on prim_server / primary
+ssh oracle@prim_server crontab -l > remote_cron.log
+scp remote_cron.log oracle@prim_server:/VT/scripts
+ssh oracle@prim_server crontab /dev/null
+ 
+# deletes archives on prim_server / primary & update RMAN repository 
+sh delete_prim_server_arch.sh 
+rman target sys/oracle123@MYDB_PRIM nocatalog cmdfile=/VT/scripts/delete_expired_arch.cmd log=/VT/scripts/logs/delete_expired_arch_prim.out
+ 
+# deletes archives on standby_server / secodary & update RMAN repository
+sh delete_standby_server_arch.sh 
+rman target / nocatalog cmdfile=/VT/scripts/delete_expired_arch.cmd log=/VT/scripts/logs/delete_expired_arch.out
+ssh oracle@prim_server crontab /VT/scripts/remote_cron.log
+exit
+
+--delete_list.sql
+set pages 0
+set head off
+spool /ATG/scripts/delete_kslv284_arch.sh
+select 'ssh oracle@kslv284 rm ' || NAME from v$archived_Log where archived='YES' and DELETED='NO';
+spool off
+spool /ATG/scripts/delete_kslv367_arch.sh
+select 'rm ' || NAME from v$archived_Log where archived='YES' and DELETED='NO';
+spool off
