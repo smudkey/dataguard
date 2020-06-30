@@ -1,0 +1,8 @@
+rman target sys/pass@PRIM auxiliary "sys/PASS@STBY"
+
+run {
+allocate channel d1 type disk ;
+allocate channel d2 type disk ;
+backup as copy reuse datafile 511 auxiliary format '+DG_STBY/DBuniQNAME/datafile/tbs_001_index.511.11111234';
+}
+
