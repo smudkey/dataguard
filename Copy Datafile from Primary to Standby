@@ -1,5 +1,5 @@
 --tns hatasi alirsa.
---rman target sys/Oracle*321@KBLIVE_TOROS connect auxiliary sys/Oracle*321@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=ural-vip.sys.yapikredi.com.tr)(PORT=1931))(CONNECT_DATA=(SERVER=DEDICATED)(SID=KBLIVE01)(UR=A))) 
+--rman target sys/pass@TARGET connect auxiliary sys/Oracle*321@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=vip.local)(PORT=1931))(CONNECT_DATA=(SERVER=DEDICATED)(SID=SOURCE)(UR=A))) 
 
 rman target sys/pass@PRIM auxiliary "sys/PASS@STBY"
 
