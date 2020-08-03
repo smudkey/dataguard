@@ -1,0 +1,54 @@
+
+Eski redolog'lar drop edilir ve yenileri eklenir.
+
+-DROP
+
+alter database drop standby logfile group 21;
+.
+.
+.
+
+-ADD
+
+ALTER DATABASE ADD STANDBY LOGFILE thread 1  GROUP 11 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 1  GROUP 12 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 1  GROUP 13 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 1  GROUP 14 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 1  GROUP 15 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 2  GROUP 21 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 2  GROUP 22 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 2  GROUP 23 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 2  GROUP 24 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 2  GROUP 25 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 3  GROUP 31 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 3  GROUP 32 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 3  GROUP 33 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 3  GROUP 34 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 3  GROUP 35 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 4  GROUP 41 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 4  GROUP 42 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 4  GROUP 43 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 4  GROUP 44 ('+RECO_OWT') SIZE 2G;
+ALTER DATABASE ADD STANDBY LOGFILE thread 4  GROUP 45 ('+RECO_OWT') SIZE 2G;
+
+alter database add  standby logfile member '+RECO_OWP' to group 11;
+alter database add  standby logfile member '+RECO_OWP' to group 12;
+alter database add  standby logfile member '+RECO_OWP' to group 13;
+alter database add  standby logfile member '+RECO_OWP' to group 14;
+alter database add  standby logfile member '+RECO_OWP' to group 15;
+alter database add  standby logfile member '+RECO_OWP' to group 21;
+alter database add  standby logfile member '+RECO_OWP' to group 22;
+alter database add  standby logfile member '+RECO_OWP' to group 23;
+alter database add  standby logfile member '+RECO_OWP' to group 24;
+alter database add  standby logfile member '+RECO_OWP' to group 25;
+alter database add  standby logfile member '+RECO_OWP' to group 31;
+alter database add  standby logfile member '+RECO_OWP' to group 32;
+alter database add  standby logfile member '+RECO_OWP' to group 33;
+alter database add  standby logfile member '+RECO_OWP' to group 34;
+alter database add  standby logfile member '+RECO_OWP' to group 35;
+alter database add  standby logfile member '+RECO_OWP' to group 31;
+alter database add  standby logfile member '+RECO_OWP' to group 32;
+alter database add  standby logfile member '+RECO_OWP' to group 33;
+alter database add  standby logfile member '+RECO_OWP' to group 34;
+alter database add  standby logfile member '+RECO_OWP' to group 35;
+
