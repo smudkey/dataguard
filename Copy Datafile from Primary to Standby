@@ -9,3 +9,37 @@ allocate channel d2 type disk ;
 backup as copy reuse datafile 511 auxiliary format '+DG_STBY/DBuniQNAME/datafile/tbs_001_index.511.11111234';
 }
 
+
+*******sample
+
+rman target sys/password@USR auxiliary "sys/password@USR_drc_atlas"
+
+run {
+allocate channel d1 type disk ;
+allocate channel d2 type disk ;
+backup as copy reuse datafile 18529 auxiliary format '+DG_DRCATLAS_DTRW/usr_drc_atlas/datafile/cbs_2020_index.15250.1030870443';
+}
+
+oracle@archprd1:~$ rman target sys/password@USR auxiliary "sys/password@USR_drc_atlas"
+Recovery Manager: Release 11.2.0.4.0 - Production on Wed Jul 1 00:16:48 2020
+Copyright (c) 1982, 2011, Oracle and/or its affiliates. All rights reserved.
+connected to target database: USR (DBID=1241277086)
+connected to auxiliary database: USR (DBID=1241277086)
+
+RMAN> run {
+2> allocate channel d1 type disk ;
+3> allocate channel d2 type disk ;
+4> backup as copy reuse datafile 18529 auxiliary format '+DG_DRCATLAS_DTRW/usr_drc_atlas/datafile/cbs_2020_index.15250.1030870443';
+5> } 
+
+using target database control file instead of recovery catalog
+allocated channel: d1
+channel d1: SID=11659 instance=USR01 device type=DISK
+
+allocated channel: d2
+channel d2: SID=2106 instance=USR01 device type=DISK
+
+Starting backup at 01/07/2020 00:17:54
+channel d1: starting datafile copy
+input datafile file number=18529 name=+DG_ATLAS_DATA/usrnew/datafile/cbs_2020_index.2638.1030870389
+
