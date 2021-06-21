@@ -10,3 +10,46 @@ where v$logfile.group# = sl.group#
 order by sl.thread#, sl.group#, member;
 
 
+--primary 
+select name,value from v$parameter where name like 'db%name';
+select name, force_logging from v$database;
+select name from v$tablespace where flashback_on='NO';
+
+ALTER SYSTEM SET LOG_ARCHIVE_CONFIG='DG_CONFIG=(BAAN,DRBAAN,X8_BAAN)' scope=both sid='*';
+
+ALTER SYSTEM SET LOG_ARCHIVE_DEST_5='SERVICE=X8_BAAN LGWR ASYNC VALID_FOR=(ONLINE_LOGFILES,PRIMARY_ROLE) REOPEN 300 DB_UNIQUE_NAME=x8_baan' scope=both sid='*';
+ALTER SYSTEM SET LOG_ARCHIVE_DEST_STATE_5=ENABLE;
+
+alter system set fal_server=X8_BAAN scope=both sid='*';
+
+
+
+------------tns
+
+
+X8_BAAN =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = gurakoda)(PORT = 1521))
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SID = baan1)
+    )
+  )
+
+
+--standby 
+alter system set db_unique_name='X8_BAAN' scope=both sid='*';
+
+alter system set fal_server=X5_BAAN scope=both sid='*';
+
+ALTER SYSTEM SET LOG_ARCHIVE_DEST_5='SERVICE=X5_BAAN LGWR ASYNC VALID_FOR=(ONLINE_LOGFILES,PRIMARY_ROLE) REOPEN 300 DB_UNIQUE_NAME=baan' scope=both sid='*';
+
+
+X5_BAAN =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = odascan)(PORT = 1521))
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SID = baan1)
+    )
+  )
