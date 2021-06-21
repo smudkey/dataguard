@@ -1,1 +1,12 @@
 
+select v$log.group#, thread#, v$logfile.member, v$log.bytes/1024/1024 size_mb
+from v$logfile, v$log 
+where v$logfile.group# = v$log.group#
+order by v$log.thread#, v$log.group#, member;
+
+select sl.group#, sl.thread#, v$logfile.member, sl.bytes/1024/1024 size_mb
+from v$logfile, v$standby_log sl 
+where v$logfile.group# = sl.group#
+order by sl.thread#, sl.group#, member;
+
+
