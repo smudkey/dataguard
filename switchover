@@ -1,1 +1,9 @@
 
+OWKK_CARDLIVE =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = owkk-scan.sys.yapikredi.com.tr)(PORT = 1789))
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = CARDLIVE)
+    )
+  )
