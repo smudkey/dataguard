@@ -1,6 +1,7 @@
 
 QUERY DATAGUARD AND STANDBY STATUS 
 --alter database recover managed standby database cancel;
+--alter database open;
 --alter database recover managed standby database using current logfile disconnect from session; 
 
 Standby database process status: You can run following query on standby database to see what MRP and RFS processes are doing, which block of which archivelog sequences are being shipped or being applied.
