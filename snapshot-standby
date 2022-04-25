@@ -1,0 +1,274 @@
+--https://dbaclass.com/article/convert-physical-standby-to-snapshot-standby-database/
+
+
+
+Convert Physical Standby To Snapshot Standby Database
+26666 views 2 min , 35 sec read 6
+
+What is snapshot standby:
+Snapshot standby is a feature in Oracle 11g that allows doing a read-write operation on the standby database.  i. e we can convert the physical standby database to snapshot standby. On that, we can do all types of testing or can be used as a development database (which is an exact replication of production ). Once the testing is over we can again convert the snapshot database to physical standby. Once it is converted physical standby database, whatever changes were done to the snapshot standby will be reverted.
+
+DEMONSTRATION:
+SQL@STANDBY> select open_mode from v$database;
+
+OPEN_MODE
+--------------------
+READ ONLY WITH APPLY
+
+1 row selected.
+
+
+
+Elapsed: 00:00:01.46
+05:35:51 SYS@STANDBY> select database_role from v$database;
+
+DATABASE_ROLE
+----------------
+PHYSICAL STANDBY
+
+1 row selected.
+
+Cancel the recovery process:
+
+05:57:08 SYS@STANDBY> alter database recover managed standby database cancel;
+
+Database altered.
+
+Elapsed: 00:00:08.16
+Enable flashback mode:
+
+05:59:54 SYS@STANDBY> shut immediate
+Database closed.
+Database dismounted.
+ORACLE instance shut down.
+06:00:44 SYS@STANDBY> startup mount;
+ORACLE instance started.
+
+Total System Global Area 2656452608 bytes
+Fixed Size 2161272 bytes
+Variable Size 1291847048 bytes
+Database Buffers 1073741824 bytes
+Redo Buffers 288702464 bytes
+Database mounted.
+
+
+
+06:07:28 SYS@TESTER1 SQL> alter database flashback on;
+alter database flashback on
+*
+ERROR at line 1:
+ORA-38706: Cannot turn on FLASHBACK DATABASE logging.
+ORA-38709: Recovery Area is not enabled.
+Elapsed: 00:00:01.49
+
+06:07:50 SYS@TESTER1 SQL> show parameter db_recovery_file_dest
+
+NAME TYPE VALUE
+------------------------------------ ----------- ------------------------------
+db_recovery_file_dest string
+db_recovery_file_dest_size big integer 0
+
+
+06:11:08 SYS@TESTER1 SQL> alter system set db_recovery_file_dest_size=1g;
+
+System altered.
+
+Elapsed: 00:00:00.12
+06:11:19 SYS@TESTER1 SQL> alter system set db_recovery_file_dest='/u03/testdb/TESTER1';
+
+System altered.
+
+Elapsed: 00:00:00.36
+06:11:25 SYS@TESTER1 SQL> show parameter db_recovery_file_dest
+
+NAME TYPE VALUE
+------------------------------------ ----------- ------------------------------
+db_recovery_file_dest string /u03/testdb/TESTER1
+db_recovery_file_dest_size big integer 1G
+
+
+
+06:11:33 SYS@TESTER1 SQL> alter database flashback on;
+
+Database altered.
+
+Elapsed: 00:00:21.13
+06:12:03 SYS@TESTER1 SQL> select flashback_on from v$database;
+
+FLASHBACK_ON
+------------------
+YES
+
+1 row selected.
+
+Elapsed: 00:00:00.10
+
+
+Now the below command will convert it to snapshot standby
+
+06:12:20 SYS@TESTER1 SQL> select status from v$instance;
+
+STATUS
+------------
+MOUNTED
+
+1 row selected.
+
+
+SYS@TESTER1 SQL> alter database convert to snapshot standby;
+
+Database altered.
+
+
+
+SYS@TESTER1 SQL> alter database open;
+
+Database altered.
+06:13:47 SYS@TESTER1 SQL> select database_role from v$database;
+
+DATABASE_ROLE
+----------------
+SNAPSHOT STANDBY
+
+1 row selected.
+SYS@TESTER1 SQL> select open_mode from v$database;
+
+OPEN_MODE
+--------------------
+READ WRITE
+SQL> select NAME,GUARANTEE_FLASHBACK_DATABASE from v$restore_point;
+
+NAME GUA
+---------------------------------------- ---
+SNAPSHOT_STANDBY_REQUIRED_10/03/2012 06: YES 13:19
+
+Let’s do some DML changes in this snapshot standby
+
+
+SYS@TESTER1 SQL> desc mahendra
+
+Name Null? Type
+----------------------------------------- -------- ----------------------------
+A VARCHAR2(10)
+
+
+
+SYS@TESTER1 SQL> alter table mahendra add (b VARCHAR2(10));
+
+Table altered.
+SYS@TESTER1 SQL> desc mahendra
+Name Null? Type
+----------------------------------------- -------- ----------------------------
+A VARCHAR2(10)
+B VARCHAR2(10)
+
+
+
+SYS@TESTER1 SQL> insert into mahendra values('mahi','notu');
+
+1 row created.
+SYS@TESTER1 SQL> commit;
+
+Commit complete.
+
+SYS@TESTER1 SQL> select *from mahendra;
+
+A B
+---------- ----------
+mahi notu
+
+We can see we are able to do write operation on snapshot database also.
+
+Let convert it again to physical standby again.
+
+SYS@TESTER1 SQL> shut immediate;
+Database closed.
+Database dismounted.
+ORACLE instance shut down.
+
+
+
+SYS@TESTER1 SQL> startup mount
+
+ORACLE instance started.
+
+Total System Global Area 2656452608 bytes
+Fixed Size 2161272 bytes
+Variable Size 1291847048 bytes
+Database Buffers 1073741824 bytes
+Redo Buffers 288702464 bytes
+Database mounted.
+SYS@TESTER1 SQL> select FLASHBACK_ON from v$database;
+
+FLASHBACK_ON
+------------------
+YES
+
+1 row selected.
+SYS@TESTER1 SQL> alter database convert to physical standby;
+
+Database altered.
+SYS@TESTER1 SQL> select database_role from v$database;
+select database_role from v$database
+*
+ERROR at line 1:
+ORA-01507: database not mounted
+SYS@TESTER1 SQL> select status from v$instance;
+
+STATUS
+------------
+STARTED
+
+1 row selected.
+SYS@TESTER1 SQL> shut immediate
+
+ORA-01507: database not mounted
+ORACLE instance shut down.
+
+
+
+SYS@TESTER1 SQL> startup
+
+ORACLE instance started.
+
+Total System Global Area 2656452608 bytes
+Fixed Size 2161272 bytes
+Variable Size 1291847048 bytes
+Database Buffers 1073741824 bytes
+Redo Buffers 288702464 bytes
+Database mounted.
+Database opened.
+
+
+
+SYS@TESTER1 SQL>alter database recover managed standby database using current logfile disconnect;
+
+
+
+SYS@TESTER1 SQL> select open_mode from v$database;
+
+OPEN_MODE
+--------------------
+READ ONLY
+
+1 row selected.
+SYS@TESTER1 SQL> select database_role from v$database;
+
+DATABASE_ROLE
+----------------
+PHYSICAL STANDBY
+
+1 row selected.
+
+Let’s check whether DML changes we did previously has been reverted or not.
+
+SYS@TSTER1 SQL> desc mahendra
+
+Name Null? Type
+----------------------------------------- -------- ----------------------------
+A VARCHAR2(10)
+
+SYS@TESTER1 SQL> select *from mahendra;
+
+no rows selected
+
